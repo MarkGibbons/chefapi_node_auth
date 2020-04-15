@@ -1,4 +1,5 @@
 package main
+// Fix the tests, make sure auth true and false are returned correctly
 
 import (
 	// "fmt"
@@ -6,6 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 	"github.com/gorilla/mux"
+	"github.com/MarkGibbons/chefapi_lib"
 )
 
 // authCheck( w http.ResponseWriter, r *http.Request) {
@@ -21,7 +23,7 @@ func TestAuthCheck(t *testing.T) {
 	if status := rr.Code; status!= http.StatusOK {
 		t.Errorf("AuthCheck status code is not ok. Got: %v want: %v\n", status, http.StatusOK)
 	}
-	wantBody := `{"node":"mynode","user":"myuser","auth":true}`
+	wantBody := `{"auth":true,"group":"mugworts","node":"mynode","user":"myuser"}`
 	if rr.Body.String() != wantBody {
 		t.Errorf("AuthCheck unexpected json returned. Expected: %v Got: %v\n", wantBody, rr.Body.String())
 	}
@@ -38,7 +40,7 @@ func TestAuthCheck(t *testing.T) {
 	if status := rr.Code; status!= http.StatusOK {
 		t.Errorf("AuthCheck status code is not ok. Got: %v want: %v\n", status, http.StatusOK)
 	}
-	wantBody = `{"node":"mynode","user":"otheruser","auth":false}`
+	wantBody = `{"auth":false,"group":"mugworts","node":"mynode","user":"otheruser"}`
 	if rr.Body.String() != wantBody {
 		t.Errorf("AuthCheck unexpected json returned. Expected: %v Got: %v\n", wantBody, rr.Body.String())
 	}
@@ -123,15 +125,15 @@ func TestInputerror(t *testing.T) {
 
 // verifyAccess(node string, user string) (json string) {
 func TestVerifyAccess(t *testing.T) {
-	expected_hit := `{"node":"mynode","user":"myuser","auth":true}`
+	expected_hit := chefapi_lib.Auth{ Node: "mynode", Group: "mugworts", User: "myuser", Auth: true }
 	hit := verifyAccess("mynode", "myuser")
         if hit != expected_hit {
-		t.Errorf("Unexpected return: Wanted: %+v Got: %+v", expected_hit, hit)
+		t.Errorf("Verify Access unexpected return: Wanted: %+v Got: %+v", expected_hit, hit)
 	}
-	expected_miss := `{"node":"mynode","user":"otheruser","auth":false}`
+	expected_miss := chefapi_lib.Auth{ Node: "mynode", Group: "mugworts", User: "otheruser", Auth: false }
 	miss := verifyAccess("mynode", "otheruser")
         if hit != expected_hit {
-		t.Errorf("Unexpected return: Wanted: %+v Got: %+v", expected_miss, miss)
+		t.Errorf("Verify Access unexpected return: Wanted: %+v Got: %+v", expected_miss, miss)
 	}
 }
 

@@ -1,16 +1,21 @@
 package main
 
+// TODO: flags in
+// TODO: TLS
+
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 	"regexp"
 	"github.com/gorilla/mux"
+	"github.com/MarkGibbons/chefapi_lib"
 )
-
 
 func main() {
 	r := mux.NewRouter()
 	r.HandleFunc("/auth/{node}/user/{user}", authCheck)
+	// Send in a json body with an array of nodes?
 	r.HandleFunc("/", defaultResp)
 	log.Fatal(http.ListenAndServe(":9001", r))
 }
@@ -29,8 +34,9 @@ func authCheck( w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	nodeAuth  :=  verifyAccess(node, user)
+	nodeJson, _  := json.Marshal(nodeAuth)
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(nodeAuth))
+	w.Write(nodeJson)
 	return
 }
 
@@ -51,13 +57,23 @@ func inputerror(w *http.ResponseWriter) {
 }
 
 // verifyAccess checks to see if the user is authorized to change the node
-// This iis where real code could be inserted. 
-func verifyAccess(node string, user string) (json string) {
+// This is where real authorization code could be inserted. 
+func verifyAccess(node string, user string) (auth chefapi_lib.Auth) {
+	auth.Auth = false
+	auth.Node = node
+	auth.User = user
 	if node[0:1] == user[0:1] {
-		json = `{"node":"` + node + `","user":"` + user + `","auth":true}`
-		return
+		auth.Auth = true
 	} else {
-		json = `{"node":"` + node + `","user":"` + user + `","auth":false}`
-		return
+		auth.Auth = false
 	}
+	switch node[0:1] {
+	case "r":
+		auth.Group = "ravens"
+	case "s":
+		auth.Group = "slyfolks"
+        default:
+		auth.Group = "mugworts"
+	}
+        return
 }
