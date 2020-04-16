@@ -1,10 +1,10 @@
 package main
 
-// TODO: flags in
 // TODO: TLS
 
 import (
 	"encoding/json"
+	"flag"
 	"log"
 	"net/http"
 	"regexp"
@@ -12,12 +12,22 @@ import (
 	"github.com/MarkGibbons/chefapi_lib"
 )
 
+type restInfo struct {
+        Cert string
+        Key string
+        Port string
+}
+
+var flags restInfo
+
 func main() {
+	flagInit()
+
 	r := mux.NewRouter()
 	r.HandleFunc("/auth/{node}/user/{user}", authCheck)
 	// Send in a json body with an array of nodes?
 	r.HandleFunc("/", defaultResp)
-	log.Fatal(http.ListenAndServe(":9001", r))
+	log.Fatal(http.ListenAndServe(":"+flags.Port, r))
 }
 
 func authCheck( w http.ResponseWriter, r *http.Request) {
@@ -75,5 +85,16 @@ func verifyAccess(node string, user string) (auth chefapi_lib.Auth) {
         default:
 		auth.Group = "mugworts"
 	}
+        return
+}
+
+func flagInit() {
+        restcert := flag.String("restcert", "", "Rest Certificate File")
+        restkey := flag.String("restkey", "", "Rest Key File")
+        restport := flag.String("restport", "9001", "Rest interface https port")
+        flag.Parse()
+        flags.Cert = *restcert
+        flags.Key = *restkey
+        flags.Port = *restport
         return
 }
