@@ -1,13 +1,14 @@
 package main
+
 // Fix the tests, make sure auth true and false are returned correctly
 
 import (
 	// "fmt"
+	"github.com/MarkGibbons/chefapi_lib"
+	"github.com/gorilla/mux"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"github.com/gorilla/mux"
-	"github.com/MarkGibbons/chefapi_lib"
 )
 
 // authCheck( w http.ResponseWriter, r *http.Request) {
@@ -20,7 +21,7 @@ func TestAuthCheck(t *testing.T) {
 	rr := httptest.NewRecorder()
 	// Invoke authCheck
 	newAuthCheckServer().ServeHTTP(rr, req)
-	if status := rr.Code; status!= http.StatusOK {
+	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("AuthCheck status code is not ok. Got: %v want: %v\n", status, http.StatusOK)
 	}
 	wantBody := `{"auth":true,"group":"mugworts","node":"mynode","user":"myuser"}`
@@ -37,7 +38,7 @@ func TestAuthCheck(t *testing.T) {
 	// Invoke authCheck
 	newAuthCheckServer().ServeHTTP(rr, req)
 	// Check the status code and response body - unauthorized case
-	if status := rr.Code; status!= http.StatusOK {
+	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("AuthCheck status code is not ok. Got: %v want: %v\n", status, http.StatusOK)
 	}
 	wantBody = `{"auth":false,"group":"mugworts","node":"mynode","user":"otheruser"}`
@@ -54,7 +55,7 @@ func TestAuthCheck(t *testing.T) {
 	// Invoke authCheck
 	newAuthCheckServer().ServeHTTP(rr, req)
 	// Check the status code and response body - unauthorized case
-	if status := rr.Code; status!= http.StatusBadRequest {
+	if status := rr.Code; status != http.StatusBadRequest {
 		t.Errorf("AuthCheck status code is not expected. Got: %v want: %v\n", status, http.StatusBadRequest)
 	}
 	wantBody = `{"message":"Bad url input value"}`
@@ -67,7 +68,7 @@ func TestAuthCheck(t *testing.T) {
 func TestCleanInput(t *testing.T) {
 	expected_in := "mynode"
 	in, ok := cleanInput(expected_in)
-        if !ok {
+	if !ok {
 		t.Errorf("Error cleaning: %+v Err: %+v\n", expected_in, ok)
 	}
 	if in != expected_in {
@@ -75,7 +76,7 @@ func TestCleanInput(t *testing.T) {
 	}
 	expected_in = "\nbounceit"
 	in, ok = cleanInput(expected_in)
-        if ok {
+	if ok {
 		t.Errorf("CleanInput did not receive expected error cleaning: %+v Err: %+v\n", expected_in, ok)
 	}
 	if in != expected_in {
@@ -94,7 +95,7 @@ func TestDefaultResp(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	// Check the status code and response body
-	if status := rr.Code; status!= http.StatusBadRequest {
+	if status := rr.Code; status != http.StatusBadRequest {
 		t.Errorf("Status code is not expected. Got: %v want: %v\n", status, http.StatusBadRequest)
 	}
 	wantBody := `{"message":"GET /auth/NODE/user/USER is the only valid method"}`
@@ -114,7 +115,7 @@ func TestInputerror(t *testing.T) {
 	// Invoke authCheck
 	newAuthCheckServer().ServeHTTP(rr, req)
 	// Check the status code and response body - unauthorized case
-	if status := rr.Code; status!= http.StatusBadRequest {
+	if status := rr.Code; status != http.StatusBadRequest {
 		t.Errorf("AuthCheck status code is not expected. Got: %v want: %v\n", status, http.StatusBadRequest)
 	}
 	wantBody := `{"message":"Bad url input value"}`
@@ -125,14 +126,14 @@ func TestInputerror(t *testing.T) {
 
 // verifyAccess(node string, user string) (json string) {
 func TestVerifyAccess(t *testing.T) {
-	expected_hit := chefapi_lib.Auth{ Node: "mynode", Group: "mugworts", User: "myuser", Auth: true }
+	expected_hit := chefapi_lib.Auth{Node: "mynode", Group: "mugworts", User: "myuser", Auth: true}
 	hit := verifyAccess("mynode", "myuser")
-        if hit != expected_hit {
+	if hit != expected_hit {
 		t.Errorf("Verify Access unexpected return: Wanted: %+v Got: %+v", expected_hit, hit)
 	}
-	expected_miss := chefapi_lib.Auth{ Node: "mynode", Group: "mugworts", User: "otheruser", Auth: false }
+	expected_miss := chefapi_lib.Auth{Node: "mynode", Group: "mugworts", User: "otheruser", Auth: false}
 	miss := verifyAccess("mynode", "otheruser")
-        if hit != expected_hit {
+	if hit != expected_hit {
 		t.Errorf("Verify Access unexpected return: Wanted: %+v Got: %+v", expected_miss, miss)
 	}
 }
