@@ -11,22 +11,22 @@ import (
 	"testing"
 )
 
-// authCheck( w http.ResponseWriter, r *http.Request) {
-func TestAuthCheck(t *testing.T) {
+// authNodeCheck( w http.ResponseWriter, r *http.Request) {
+func TestAuthNodeCheck(t *testing.T) {
 	// Check the status code and response body - authorized case
 	req, err := http.NewRequest("GET", "/auth/mynode/user/myuser", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	rr := httptest.NewRecorder()
-	// Invoke authCheck
-	newAuthCheckServer().ServeHTTP(rr, req)
+	// Invoke authNodeCheck
+	newAuthNodeCheckServer().ServeHTTP(rr, req)
 	if status := rr.Code; status != http.StatusOK {
-		t.Errorf("AuthCheck status code is not ok. Got: %v want: %v\n", status, http.StatusOK)
+		t.Errorf("AuthNodeCheck status code is not ok. Got: %v want: %v\n", status, http.StatusOK)
 	}
 	wantBody := `{"auth":true,"group":"mugworts","node":"mynode","user":"myuser"}`
 	if rr.Body.String() != wantBody {
-		t.Errorf("AuthCheck unexpected json returned. Expected: %v Got: %v\n", wantBody, rr.Body.String())
+		t.Errorf("AuthNodeCheck unexpected json returned. Expected: %v Got: %v\n", wantBody, rr.Body.String())
 	}
 
 	// Check the status code and response body - authorized case
@@ -35,15 +35,15 @@ func TestAuthCheck(t *testing.T) {
 		t.Fatal(err)
 	}
 	rr = httptest.NewRecorder()
-	// Invoke authCheck
-	newAuthCheckServer().ServeHTTP(rr, req)
+	// Invoke authNodeCheck
+	newAuthNodeCheckServer().ServeHTTP(rr, req)
 	// Check the status code and response body - unauthorized case
 	if status := rr.Code; status != http.StatusOK {
-		t.Errorf("AuthCheck status code is not ok. Got: %v want: %v\n", status, http.StatusOK)
+		t.Errorf("AuthNodeCheck status code is not ok. Got: %v want: %v\n", status, http.StatusOK)
 	}
 	wantBody = `{"auth":false,"group":"mugworts","node":"mynode","user":"otheruser"}`
 	if rr.Body.String() != wantBody {
-		t.Errorf("AuthCheck unexpected json returned. Expected: %v Got: %v\n", wantBody, rr.Body.String())
+		t.Errorf("AuthNodeCheck unexpected json returned. Expected: %v Got: %v\n", wantBody, rr.Body.String())
 	}
 
 	// Check the status code and response body - invalid request
@@ -52,15 +52,15 @@ func TestAuthCheck(t *testing.T) {
 		t.Fatal(err)
 	}
 	rr = httptest.NewRecorder()
-	// Invoke authCheck
-	newAuthCheckServer().ServeHTTP(rr, req)
+	// Invoke authNodeCheck
+	newAuthNodeCheckServer().ServeHTTP(rr, req)
 	// Check the status code and response body - unauthorized case
 	if status := rr.Code; status != http.StatusBadRequest {
-		t.Errorf("AuthCheck status code is not expected. Got: %v want: %v\n", status, http.StatusBadRequest)
+		t.Errorf("AuthNodeCheck status code is not expected. Got: %v want: %v\n", status, http.StatusBadRequest)
 	}
 	wantBody = `{"message":"Bad url input value"}`
 	if rr.Body.String() != wantBody {
-		t.Errorf("AuthCheck unexpected json returned. Expected: %v Got: %v\n", wantBody, rr.Body.String())
+		t.Errorf("AuthNodeCheck unexpected json returned. Expected: %v Got: %v\n", wantBody, rr.Body.String())
 	}
 }
 
@@ -84,26 +84,6 @@ func TestCleanInput(t *testing.T) {
 	}
 }
 
-// defaultResp(w http.ResponseWriter, r *http.Request) {
-func TestDefaultResp(t *testing.T) {
-	req, err := http.NewRequest("GET", "/", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(defaultResp)
-	handler.ServeHTTP(rr, req)
-
-	// Check the status code and response body
-	if status := rr.Code; status != http.StatusBadRequest {
-		t.Errorf("Status code is not expected. Got: %v want: %v\n", status, http.StatusBadRequest)
-	}
-	wantBody := `{"message":"GET /auth/NODE/user/USER is the only valid method"}`
-	if rr.Body.String() != wantBody {
-		t.Errorf("AuthCheck unexpected json returned. Expected: %v Got: %v\n", wantBody, rr.Body.String())
-	}
-}
-
 // inputerror(w *http.ResponseWriter) {
 func TestInputerror(t *testing.T) {
 	// Check the status code and response body - invalid request invoked inputerror
@@ -112,15 +92,15 @@ func TestInputerror(t *testing.T) {
 		t.Fatal(err)
 	}
 	rr := httptest.NewRecorder()
-	// Invoke authCheck
-	newAuthCheckServer().ServeHTTP(rr, req)
+	// Invoke authNodeCheck
+	newAuthNodeCheckServer().ServeHTTP(rr, req)
 	// Check the status code and response body - unauthorized case
 	if status := rr.Code; status != http.StatusBadRequest {
-		t.Errorf("AuthCheck status code is not expected. Got: %v want: %v\n", status, http.StatusBadRequest)
+		t.Errorf("AuthNodeCheck status code is not expected. Got: %v want: %v\n", status, http.StatusBadRequest)
 	}
 	wantBody := `{"message":"Bad url input value"}`
 	if rr.Body.String() != wantBody {
-		t.Errorf("AuthCheck unexpected json returned. Expected: %v Got: %v\n", wantBody, rr.Body.String())
+		t.Errorf("AuthNodeCheck unexpected json returned. Expected: %v Got: %v\n", wantBody, rr.Body.String())
 	}
 }
 
@@ -138,8 +118,8 @@ func TestVerifyAccess(t *testing.T) {
 	}
 }
 
-func newAuthCheckServer() http.Handler {
+func newAuthNodeCheckServer() http.Handler {
 	r := mux.NewRouter()
-	r.HandleFunc("/auth/{node}/user/{user}", authCheck)
+	r.HandleFunc("/auth/{node}/user/{user}", authNodeCheck)
 	return r
 }

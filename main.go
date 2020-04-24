@@ -5,6 +5,7 @@ package main
 import (
 	"encoding/json"
 	"flag"
+	"fmt"
 	"github.com/MarkGibbons/chefapi_lib"
 	"github.com/gorilla/mux"
 	"log"
@@ -24,13 +25,12 @@ func main() {
 	flagInit()
 
 	r := mux.NewRouter()
-	r.HandleFunc("/auth/{node}/user/{user}", authCheck)
-	// Send in a json body with an array of nodes?
-	r.HandleFunc("/", defaultResp)
+	r.HandleFunc("/auth/{user}/node/{node}", authNodeCheck)
+	r.HandleFunc("/auth/{user}/org/{org}", authOrgCheck)
 	log.Fatal(http.ListenAndServe(":"+flags.Port, r))
 }
 
-func authCheck(w http.ResponseWriter, r *http.Request) {
+func authNodeCheck(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	vars := mux.Vars(r)
 	node, ok := cleanInput(vars["node"])
@@ -45,8 +45,42 @@ func authCheck(w http.ResponseWriter, r *http.Request) {
 	}
 	nodeAuth := verifyAccess(node, user)
 	nodeJson, _ := json.Marshal(nodeAuth)
+	fmt.Printf("Node authorization %+v\n", nodeJson)
 	w.WriteHeader(http.StatusOK)
 	w.Write(nodeJson)
+	return
+}
+
+func authOrgCheck(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	vars := mux.Vars(r)
+	org, ok := cleanInput(vars["org"])
+	if !ok {
+		inputerror(&w)
+		return
+	}
+	user, ok := cleanInput(vars["user"])
+	if !ok {
+		inputerror(&w)
+		return
+	}
+	orgAuth := chefapi_lib.Auth{}
+	orgAuth.Org = org
+	orgAuth.User = user
+	orgAuth.Auth = false
+	// Most users cannot join admin or pci* organizations
+	if org != "admin" && org[0:2] != "pci" {
+		orgAuth.Auth = true
+	}
+	// Users that start with a can do anything
+	if user[0:0] == "a" {
+		orgAuth.Auth = true
+	}
+
+	orgJson, _ := json.Marshal(orgAuth)
+	fmt.Printf("Org authorization %+v\n", orgJson)
+	w.WriteHeader(http.StatusOK)
+	w.Write(orgJson)
 	return
 }
 
@@ -54,11 +88,6 @@ func cleanInput(in string) (out string, matched bool) {
 	matched, _ = regexp.MatchString("^[[:word:]]+$", in)
 	out = in
 	return
-}
-
-func defaultResp(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusBadRequest)
-	w.Write([]byte(`{"message":"GET /auth/NODE/user/USER is the only valid method"}`))
 }
 
 func inputerror(w *http.ResponseWriter) {
@@ -76,6 +105,9 @@ func verifyAccess(node string, user string) (auth chefapi_lib.Auth) {
 		auth.Auth = true
 	} else {
 		auth.Auth = false
+	}
+	if user[0:1] == "a" {
+		auth.Auth = true
 	}
 	switch node[0:1] {
 	case "r":
